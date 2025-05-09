@@ -40,7 +40,9 @@ export default function MobileMenu() {
       {/* Mobile header */}
       <div className="md:hidden bg-gray-900 text-white p-4 flex items-center justify-between shadow-md">
         <div className="flex items-center">
-          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Flypside</span>
+          <Link href="/" onClick={closeMobileMenu}>
+            <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Flypside</span>
+          </Link>
         </div>
         <Button 
           variant="ghost" 
@@ -69,7 +71,9 @@ export default function MobileMenu() {
           </div>
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div className="flex-shrink-0 flex items-center px-4">
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Flypside</span>
+              <Link href="/" onClick={closeMobileMenu}>
+                <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Flypside</span>
+              </Link>
             </div>
             <nav className="mt-8 px-3 space-y-2">
               <Link href="/">

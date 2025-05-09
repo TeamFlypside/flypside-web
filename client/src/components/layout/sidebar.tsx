@@ -31,7 +31,9 @@ export default function Sidebar() {
       <div className="flex flex-col w-64">
         <div className="sidebar flex flex-col h-0 flex-1">
           <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900 shadow-md">
-            <span className="text-xl font-bold text-white tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Flypside</span>
+            <Link href="/">
+              <span className="text-xl font-bold text-white tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Flypside</span>
+            </Link>
           </div>
           <div className="flex-1 flex flex-col overflow-y-auto">
             <nav className="flex-1 px-3 py-6 space-y-2">
