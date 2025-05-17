@@ -132,7 +132,7 @@ export const insertEventSchema = createInsertSchema(events)
     requireIdVerification: z.boolean().optional().default(false), // Optional
     currency: z.enum(["INR", "USD", "EUR", "GBP", "AUD"]).optional().default("INR"), // Optional
     draftMode: z.boolean().optional().default(false), // Optional
-    offerId: z.number().optional(), // Optional
+    offerId: z.number().optional().nullable(), // Optional and can be null
   });
 
 // Event images table

@@ -40,11 +40,13 @@ const eventFormSchema = z.object({
     }, "Events cannot be created for past dates"),
   endDateTime: z.string()
     .min(1, "End date and time is required")
-    .refine((date, ctx: any) => {
-      // Fix the type issue by properly typing ctx and using optional chaining
-      const startDate = ctx?.data?.startDateTime ? new Date(ctx.data.startDateTime) : undefined;
+    .refine((date: string, ctx: z.RefinementCtx) => {
+      // Properly type the context data
+      const contextData = ctx.data as { startDateTime?: string } | undefined;
+      const startDate = contextData?.startDateTime ? new Date(contextData.startDateTime) : undefined;
       const endDate = new Date(date);
       
+      // If we have a start date, ensure end date is after it
       if (startDate && endDate <= startDate) {
         return false;
       }
@@ -55,12 +57,12 @@ const eventFormSchema = z.object({
   location: z.string().optional(),
   requireIdVerification: z.boolean().optional().default(false),
   currency: z.enum(["INR", "USD", "EUR", "GBP", "AUD"]).default("INR"),
-  // Changed to handle string in form but will convert to number or null when submitting
+  // Handle offerId as string in the form, but transform to number or null for API
   offerId: z.union([
     z.literal(""), // Empty string case
-    z.literal("none"), // None selected case
+    z.literal("none"), // None selected case 
     z.string().regex(/^\d+$/, "Offer ID must be a number") // String representation of a number
-  ]).optional().transform(val => {
+  ]).transform(val => {
     if (!val || val === "" || val === "none") return null;
     return parseInt(val, 10);
   }),
@@ -90,7 +92,6 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      hostId: businessPartner?.id,
       name: existingData?.name || "",
       description: existingData?.description || "",
       startDateTime: existingData?.startDate 
@@ -103,8 +104,8 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
       price: existingData?.price || 0,
       requireIdVerification: existingData?.requireIdVerification || false,
       location: existingData?.location || "",
-      // draftMode removed
-      offerId: existingData?.offerId || "",
+      // Handle existing offerId - convert to string for form display or use empty string
+      offerId: existingData?.offerId ? existingData.offerId.toString() : "",
       currency: existingData?.currency || "INR",
     }
   });
@@ -210,13 +211,8 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
         draftMode: false // Always false since we're removing draft functionality
       };
       
-      // Add offer ID if selected
-      if (values.offerId && values.offerId !== '' && values.offerId !== 'none') {
-        eventData.offerId = Number(values.offerId);
-      } else {
-        // Explicitly set to null if no offer is selected
-        eventData.offerId = null;
-      }
+      // Add offer ID - the transform in the schema will handle conversion to null or number
+  eventData.offerId = values.offerId;
       
       console.log("Submitting event data:", eventData);
       
@@ -251,79 +247,7 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
     }
   };
 
-  const saveDraft = () => {
-    try {
-      console.log("Saving draft...");
-      setIsSubmitting(true);
-      
-      // Get current values 
-      const currentValues = form.getValues();
-      
-      // Validate minimum required fields for a draft
-      if (!currentValues.name) {
-        toast({
-          title: "Validation Error",
-          description: "Event name is required, even for drafts",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Set minimal requirements for a draft event
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      // Create the event data object with draft mode explicitly set to true
-      const eventData: any = {
-        hostId: businessPartner?.id,
-        name: currentValues.name,
-        description: currentValues.description || "",
-        // Use provided dates if available, or default to today/tomorrow for drafts
-        startDate: currentValues.startDateTime ? new Date(currentValues.startDateTime).toISOString() : now.toISOString(),
-        endDate: currentValues.endDateTime ? new Date(currentValues.endDateTime).toISOString() : tomorrow.toISOString(),
-        maxParticipants: Number(currentValues.maxParticipants || 50),
-        price: Number(currentValues.price || 0),
-        currency: currentValues.currency || "INR",
-        requireIdVerification: Boolean(currentValues.requireIdVerification),
-        location: currentValues.location || "",
-        draftMode: true  // Always true for drafts - this is critical
-      };
-      
-      // Handle offer ID the same way as in onSubmit
-      if (currentValues.offerId && currentValues.offerId !== '' && currentValues.offerId !== 'none') {
-        eventData.offerId = Number(currentValues.offerId);
-      } else {
-        eventData.offerId = null;
-      }
-      
-      // For the update case
-      if (existingData?.id) {
-        console.log("Updating existing draft event:", existingData.id);
-        // Only include the banner image if it's changed
-        if (imagePreview && imagePreview !== existingData?.bannerImage) {
-          eventData.bannerImage = imagePreview;
-        }
-        updateEventMutation.mutate({ id: existingData.id, data: eventData });
-      } else {
-        // For new drafts, include the banner image if available
-        if (imagePreview) {
-          eventData.bannerImage = imagePreview;
-        }
-        console.log("Creating new draft event");
-        createEventMutation.mutate(eventData);
-      }
-    } catch (error) {
-      console.error("Error saving draft:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem saving the draft",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-    }
-  };
+
 
   return (
     <Card>
