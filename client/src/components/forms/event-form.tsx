@@ -31,41 +31,58 @@ const eventFormSchema = z.object({
   description: z.string().optional(),
   startDateTime: z.string()
     .min(1, "Start date and time is required")
-    .refine((date) => {
-      // Only validate past dates if it's not a draft (for non-draft events)
+    .superRefine((date, ctx) => {
+      // Only validate past dates for events
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const startDate = new Date(date);
-      return startDate >= today;
-    }, "Events cannot be created for past dates"),
+      
+      if (startDate < today) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Events cannot be created for past dates",
+        });
+      }
+    }),
   endDateTime: z.string()
     .min(1, "End date and time is required")
-    .refine((date: string, ctx: z.RefinementCtx) => {
-      // Properly type the context data
-      const contextData = ctx.data as { startDateTime?: string } | undefined;
-      const startDate = contextData?.startDateTime ? new Date(contextData.startDateTime) : undefined;
+    .superRefine((date, ctx) => {
+      // Get parent data (other form fields) through the context
+      const allData = (ctx as any).parent;
+      const startDateTime = allData?.startDateTime;
+      if (!startDateTime) return;
+      
+      const startDate = new Date(startDateTime);
       const endDate = new Date(date);
       
-      // If we have a start date, ensure end date is after it
-      if (startDate && endDate <= startDate) {
-        return false;
+      // Validate end date is after start date
+      if (endDate <= startDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "End date must be after the start date",
+        });
       }
-      return true;
-    }, "End date must be after the start date"),
+    }),
   maxParticipants: z.coerce.number().positive().default(50),
   price: z.coerce.number().min(0).default(0),
   location: z.string().optional(),
   requireIdVerification: z.boolean().optional().default(false),
   currency: z.enum(["INR", "USD", "EUR", "GBP", "AUD"]).default("INR"),
   // Handle offerId as string in the form, but transform to number or null for API
-  offerId: z.union([
-    z.literal(""), // Empty string case
-    z.literal("none"), // None selected case 
-    z.string().regex(/^\d+$/, "Offer ID must be a number") // String representation of a number
-  ]).transform(val => {
-    if (!val || val === "" || val === "none") return null;
-    return parseInt(val, 10);
-  }),
+  offerId: z.preprocess(
+    // First preprocessing step: convert input to expected type
+    (val) => {
+      if (val === null || val === undefined || val === "" || val === "none") {
+        return null;
+      }
+      return String(val);
+    },
+    // Then validate with a schema that accepts null or string
+    z.union([
+      z.null(),
+      z.string().regex(/^\d+$/, "Offer ID must be a number").transform(val => parseInt(val, 10))
+    ])
+  ),
   // draftMode removed as requested
   bannerImage: z.any().optional(),
 });
@@ -530,7 +547,7 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
                     <FormLabel>Attach promotional offer</FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value === "none" ? "" : value)} 
-                      defaultValue={field.value ? field.value.toString() : "none"}
+                      value={field.value ? field.value.toString() : "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -539,11 +556,11 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {offers?.map((offer: any) => (
+                        {offers && Array.isArray(offers) ? offers.map((offer: any) => (
                           <SelectItem key={offer.id} value={offer.id.toString()}>
                             {offer.text} - {offer.percentage}% off
                           </SelectItem>
-                        ))}
+                        )) : null}
                       </SelectContent>
                     </Select>
                     <FormDescription>
