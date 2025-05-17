@@ -419,11 +419,20 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
                   <FormItem className="col-span-6 sm:col-span-3">
                     <FormLabel>Start date & time</FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field} 
-                        type="datetime-local" 
-                      />
+                      <div className="relative">
+                        <Input 
+                          {...field} 
+                          type="datetime-local" 
+                          className="pr-12 shadow-md hover:shadow-lg focus:shadow-lg transition-all duration-300 bg-white"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <div className="h-5 w-5 text-purple-500">📅</div>
+                        </div>
+                      </div>
                     </FormControl>
+                    <FormDescription className="text-xs">
+                      Select a future date and time for your event
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -436,11 +445,20 @@ export default function EventForm({ onSuccess, existingData }: EventFormProps) {
                   <FormItem className="col-span-6 sm:col-span-3">
                     <FormLabel>End date & time</FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field} 
-                        type="datetime-local" 
-                      />
+                      <div className="relative">
+                        <Input 
+                          {...field} 
+                          type="datetime-local" 
+                          className="pr-12 shadow-md hover:shadow-lg focus:shadow-lg transition-all duration-300 bg-white"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <div className="h-5 w-5 text-purple-500">📅</div>
+                        </div>
+                      </div>
                     </FormControl>
+                    <FormDescription className="text-xs">
+                      Must be after the start date & time
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
