@@ -55,7 +55,15 @@ const eventFormSchema = z.object({
   location: z.string().optional(),
   requireIdVerification: z.boolean().optional().default(false),
   currency: z.enum(["INR", "USD", "EUR", "GBP", "AUD"]).default("INR"),
-  offerId: z.string().optional(),
+  // Changed to handle string in form but will convert to number or null when submitting
+  offerId: z.union([
+    z.literal(""), // Empty string case
+    z.literal("none"), // None selected case
+    z.string().regex(/^\d+$/, "Offer ID must be a number") // String representation of a number
+  ]).optional().transform(val => {
+    if (!val || val === "" || val === "none") return null;
+    return parseInt(val, 10);
+  }),
   // draftMode removed as requested
   bannerImage: z.any().optional(),
 });
